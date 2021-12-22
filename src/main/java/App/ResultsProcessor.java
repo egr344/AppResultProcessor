@@ -4,10 +4,7 @@ import enums.Distance;
 import enums.Gender;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -23,11 +20,10 @@ public class ResultsProcessor {
 
     private List<Sportsman> sportsmanList;
 
-    private void downloadResults(String path) {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
-            //String[] sportsmenString =
-            sportsmanList = bufferedReader.lines().map(line -> line.split(",")).map(this::buildSportsman).filter(Objects::nonNull).sorted().collect(Collectors.toList());
-
+    public void downloadResults(File file) {
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+            sportsmanList = bufferedReader.lines().map(line -> line.split(",")).map(this::buildSportsman).filter(Objects::nonNull)
+                    .sorted().collect(Collectors.toList());
         } catch (FileNotFoundException e) {
             e.getMessage();
         } catch (IOException e) {
@@ -35,22 +31,15 @@ public class ResultsProcessor {
         }
     }
 
-    public Sportsman[] getTopSportsmen(String path,Distance distance, Gender gender, int limit) {
-        downloadResults(path);
-        Sportsman[] topSportsmen = new Sportsman[limit];
+    public Sportsman[] getTopSportsmen(Distance distance, Gender gender, int limit) {
+
         int i = 0;
         if (sportsmanList == null) {
             System.out.println("Список спортсменов не загружен");
-            return topSportsmen;
+            return null;
         }
-        for (Sportsman sportsman : sportsmanList) {
-            if (sportsman.getDistance() == distance && sportsman.getGender() == gender) {
-                topSportsmen[i] = sportsman;
-                i += 1;
-            }
-            if (i == limit)
-                break;
-        }
+        Sportsman[] topSportsmen =  sportsmanList.stream().filter(Objects::nonNull).filter(sportsman -> sportsman.getDistance() == distance && sportsman.getGender() == gender)
+                .limit(limit).toArray(Sportsman[]::new);
         return topSportsmen;
     }
 
